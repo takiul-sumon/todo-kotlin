@@ -1,5 +1,4 @@
 package com.example.todoapp
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -37,8 +36,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.foundation.layout.Box
 import  androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
-
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +57,13 @@ Scaffold(modifier = Modifier.fillMaxSize()) {
 @Composable
 fun Todo(modifier: Modifier){
     var task by remember { mutableStateOf("") }
+    val tasks = listOf(
+        "Complete Kotlin project",
+        "Read tech article",
+        "Go for a walk",
+        "Plan tomorrow",
+        "Buy groceries"
+    )
 
     Column(Modifier.padding(16.dp)){
         Spacer(modifier = Modifier.height(130.dp))
@@ -83,6 +92,15 @@ fun Todo(modifier: Modifier){
         )
         Spacer(modifier = Modifier.height(12.dp))
         Textformfie()
+        Spacer(modifier = Modifier.height(12.dp))
+
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(tasks) { task ->
+                TaskCard(task)
+            }
+        }
     }
 }
 @Composable
@@ -155,4 +173,44 @@ fun Textformfie() {
             unfocusedContainerColor = Color.White
         )
     )
+}
+
+
+@Composable
+fun TaskCard(task: String) {
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(70.dp)
+            .background(
+                color = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(horizontal = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .border(
+                        width = 2.dp,
+                        color = Color(0xFF8A93A8),
+                        shape = RoundedCornerShape(6.dp)
+                    )
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Text(
+                text = task,
+                fontSize = 16.sp,
+                color = Color(0xFF17203A)
+            )
+        }
+    }
 }
