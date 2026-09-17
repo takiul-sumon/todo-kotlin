@@ -1,4 +1,5 @@
 package com.example.todoapp
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,11 +38,15 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.foundation.layout.Box
 import  androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,14 +62,16 @@ Scaffold(modifier = Modifier.fillMaxSize()) {
 
 @Composable
 fun Todo(modifier: Modifier){
-    var task by remember { mutableStateOf("") }
-    val tasks = listOf(
-        "Complete Kotlin project",
-        "Read tech article",
-        "Go for a walk",
-        "Plan tomorrow",
-        "Buy groceries"
-    )
+    var taskText by remember { mutableStateOf("") }
+    val tasks = remember {
+        mutableStateListOf(
+            Task("Buy groceries", false),
+            Task("Walk the dog", true),
+            Task("Finish Jetpack Compose project", false),
+            Task("Read a book", false),
+            Task("Exercise for 30 minutes", true)
+        )
+    }
 
     Column(Modifier.padding(16.dp)){
         Spacer(modifier = Modifier.height(130.dp))
@@ -91,18 +99,113 @@ fun Todo(modifier: Modifier){
             color = Color(0xFF7B849C)
         )
         Spacer(modifier = Modifier.height(12.dp))
-        Textformfie()
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(tasks) { task ->
-                TaskCard(task)
+        Textformfie(
+            value = taskText,
+            onValueChange = { taskText = it },
+            onAdd = {
+                if (taskText.isNotBlank()) {
+                    tasks.add(0, Task(taskText, false))
+                    taskText = ""
+                }
             }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        TaskList(
+            tasks = tasks,
+            onToggleComplete = { task ->
+                val index = tasks.indexOf(task)
+                if (index != -1) {
+                    tasks[index] = task.copy(isCompleted = !task.isCompleted)
+                }
+            },
+            onDelete = { task ->
+                tasks.remove(task)
+            }
+        )
+    }
+}
+
+data class Task(val title: String, val isCompleted: Boolean)
+
+@Composable
+fun TaskList(
+    tasks: List<Task>,
+    onToggleComplete: (Task) -> Unit,
+    onDelete: (Task) -> Unit
+) {
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        items(tasks) { task ->
+            TaskItemRow(
+                task = task,
+                onToggleComplete = { onToggleComplete(task) },
+                onDelete = { onDelete(task) }
+            )
         }
     }
 }
+
+@Composable
+fun TaskItemRow(
+    task: Task,
+    onToggleComplete: () -> Unit,
+    onDelete: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFF7F8FA), RoundedCornerShape(12.dp))
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .background(
+                        color = if (task.isCompleted) Color(0xFF6254E8) else Color.Transparent,
+                        shape = CircleShape
+                    )
+                    .border(2.dp, Color(0xFF6254E8), CircleShape)
+                    .clickable { onToggleComplete() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (task.isCompleted) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Completed",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = task.title,
+                fontSize = 16.sp,
+                color = if (task.isCompleted) Color(0xFF9EA4B8) else Color(0xFF17203A),
+                textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Icon(
+            imageVector = Icons.Default.Delete,
+            contentDescription = "Delete task",
+            tint = Color(0xFF8A91A5),
+            modifier = Modifier
+                .size(24.dp)
+                .clickable { onDelete() }
+        )
+    }
+}
+
 @Composable
 fun ThemeToggleIcon(
 
@@ -115,15 +218,14 @@ fun ThemeToggleIcon(
 
 }
 @Composable
-fun Textformfie() {
-
-    var task by remember { mutableStateOf("") }
-
+fun Textformfie(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onAdd: () -> Unit
+) {
     OutlinedTextField(
-        value = task,
-        onValueChange = {
-            task = it
-        },
+        value = value,
+        onValueChange = onValueChange,
 
         placeholder = {
             Text(
@@ -147,7 +249,8 @@ fun Textformfie() {
                     .background(
                         color = Color(0xFF6254E8),
                         shape = CircleShape
-                    ),
+                    )
+                    .clickable { onAdd() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -173,44 +276,4 @@ fun Textformfie() {
             unfocusedContainerColor = Color.White
         )
     )
-}
-
-
-@Composable
-fun TaskCard(task: String) {
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(70.dp)
-            .background(
-                color = Color.White,
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(horizontal = 16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .border(
-                        width = 2.dp,
-                        color = Color(0xFF8A93A8),
-                        shape = RoundedCornerShape(6.dp)
-                    )
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Text(
-                text = task,
-                fontSize = 16.sp,
-                color = Color(0xFF17203A)
-            )
-        }
-    }
 }
